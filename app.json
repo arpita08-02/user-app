@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Avijo2",
+    "slug": "Avijo2", 
+    "scheme": "avijo2",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.randomcompany.mynewapp"
+    },
+    "android": {
+      "package": "com.randomcompany.mynewapp",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8a53effa-a250-421d-95ab-23250d359e25"
+      }
+    },
+    "owner": "souvikde"
+  }
+}
