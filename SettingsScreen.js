@@ -290,7 +290,7 @@ export default function SettingsScreen({ navigation }) {
 
       {/* Profile Section */}
       <View style={styles.profileSection}>
-        <Image source={require("./assets/profile.jpeg")} style={styles.profileImage} />
+        <Image source={require("./assets/Profile.png")} style={styles.profileImage} />
         <View style={styles.profileText}>
           <Text style={styles.userName}>Souvik De</Text>
           <Text style={styles.phoneNumber}>{phoneNumber}</Text>
