@@ -1,17 +1,18 @@
 {
   "expo": {
-    "name": "Avijo2",
-    "slug": "Avijo2",
-    "scheme": "avijo2",
+    "name": "Avijo:The HealthCare App",
+    "slug": "Avijo:The HealthCare App",
+    "scheme": "Avijo:The HealthCare App",
     "version": "1.0.0",
     "newArchEnabled": true,
     "orientation": "portrait",
-    "icon": "./assets/avijoicon.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
+      
     },
     "ios": {
       "supportsTablet": true,
@@ -23,13 +24,12 @@
     "android": {
       "package": "com.randomcompany.mynewapp",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
       "runtimeVersion": "1.0.0",
-      "enableHermes": true,   
-    "optimizeImages": true
-
+      "enableHermes": true,
+      "optimizeImages": true
     },
     "web": {
       "favicon": "./assets/favicon.png"

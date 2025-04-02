@@ -21,7 +21,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   }
 }
 
-rootProject.name = 'Avijo2'
+rootProject.name = 'AvijoThe HealthCare App'
 
 dependencyResolutionManagement {
   versionCatalogs {

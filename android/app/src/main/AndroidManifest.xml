@@ -29,7 +29,7 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="avijo2"/>
+        <data android:scheme="Avijo:The HealthCare App"/>
         <data android:scheme="com.randomcompany.mynewapp"/>
       </intent-filter>
     </activity>
