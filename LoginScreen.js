@@ -20,7 +20,6 @@ const LoginScreen = () => {
     androidClientId: '571935621051-jqco95bikj99p7fjaak47qd5u7fek136.apps.googleusercontent.com',
   });
 
- 
   const handleSendOTP = async () => {
     if (phoneNumber.length !== 10) {
       Alert.alert('Invalid Number', 'Please enter a valid 10-digit phone number.');
@@ -29,48 +28,67 @@ const LoginScreen = () => {
 
     try {
       setLoading(true);
+      console.log('Sending OTP request for:', phoneNumber);
+      
       const response = await fetch(`${BASE_URL}/user/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobileNumber: phoneNumber }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ 
+          mobileNumber: phoneNumber,
+          isNewUser: false // Explicitly indicate this is for login
+        }),
       });
 
       const data = await response.json();
-      console.log('API Response:', data);
+      console.log('API Response:', JSON.stringify(data, null, 2));
 
       await AsyncStorage.setItem('phoneNumber', phoneNumber);
 
       if (response.ok) {
-        // Existing user - navigate to SignupScreen with OTP
+        console.log('OTP sent successfully:', data.otp);
+        Alert.alert('OTP Sent', `OTP has been sent to ${phoneNumber} (DEV: ${data.otp})`);
+        
         navigation.navigate('SignupScreen', { 
           mobileNumber: phoneNumber,
-          otp: data.otp
+          otp: data.otp || '123456' // Fallback for development
         });
       } else if (data.message === "User not found. Please register.") {
-        // New user - send OTP for account creation
+        console.log('User not found, sending registration OTP');
         const otpResponse = await fetch(`${BASE_URL}/user/send-otp`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mobileNumber: phoneNumber, isNewUser: true }),
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ 
+            mobileNumber: phoneNumber, 
+            isNewUser: true 
+          }),
         });
         
         const otpData = await otpResponse.json();
+        console.log('Registration OTP Response:', JSON.stringify(otpData, null, 2));
         
         if (otpResponse.ok) {
-          // Navigate to CreateAccountScreen with number and OTP
+          console.log('Registration OTP sent:', otpData.otp);
+          Alert.alert('OTP Sent', `OTP has been sent to ${phoneNumber} (DEV: ${otpData.otp})`);
+          
           navigation.navigate('CreateAccountScreen', { 
             mobileNumber: phoneNumber,
-            otp: otpData.otp
+            otp: otpData.otp || '123456' // Fallback for development
           });
         } else {
-          Alert.alert('Error', otpData.message || 'Failed to send OTP for new user');
+          throw new Error(otpData.message || 'Failed to send OTP for new user');
         }
       } else {
-        Alert.alert('Error', data.message || 'Failed to send OTP');
+        throw new Error(data.message || 'Failed to send OTP');
       }
     } catch (error) {
       console.error('Error:', error);
-      Alert.alert('Error', 'An error occurred. Please try again.');
+      Alert.alert('Error', error.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -168,23 +186,103 @@ const LoginScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 24, justifyContent: 'center', backgroundColor: 'white' },
-  heading: { color: '#0095D9', fontSize: 32, fontFamily: 'Gilroy-Bold' },
-  text: { color: 'gray', marginTop: 10 },
-  phoneContainer: { width: '100%', marginTop: 20 },
-  phoneText: { fontSize: 12, fontFamily: 'Gilroy-SemiBold', color: '#0097DB' },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderColor: 'gray', marginTop: 5, paddingBottom: 5 },
-  countryCode: { fontSize: 14, fontFamily: 'Poppins-Regular', color: 'black', marginRight: 10 },
-  phoneInput: { flex: 1, fontSize: 14, fontFamily: 'Poppins-Regular', color: 'black' },
-  buttonContainer: { marginTop: 30 },
-  button: { width: '100%', height: 46, backgroundColor: '#0097DB', borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  buttonText: { color: 'white', fontSize: 18, fontFamily: 'Gilroy-SemiBold' },
-  orContainer: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 },
-  line: { width: '40%', height: 1, backgroundColor: 'black' },
-  or: { fontSize: 16, color: 'black' },
-  socialButton: { flexDirection: 'row', width: '100%', alignItems: 'center', justifyContent: 'center', height: 46, backgroundColor: 'white', marginTop: 20, elevation: 5, borderRadius: 10 },
-  icon: { height: 23, width: 23 },
-  socialButtonText: { paddingLeft: 10, fontSize: 18, fontFamily: 'Gilroy-SemiBold', color: 'darkgray' }
+  container: { 
+    flex: 1, 
+    paddingHorizontal: 24, 
+    justifyContent: 'center', 
+    backgroundColor: 'white' 
+  },
+  heading: { 
+    color: '#0095D9', 
+    fontSize: 32, 
+    fontFamily: 'Gilroy-Bold' 
+  },
+  text: { 
+    color: 'gray', 
+    marginTop: 10 
+  },
+  phoneContainer: { 
+    width: '100%', 
+    marginTop: 20 
+  },
+  phoneText: { 
+    fontSize: 12, 
+    fontFamily: 'Gilroy-SemiBold', 
+    color: '#0097DB' 
+  },
+  inputContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    borderBottomWidth: 1, 
+    borderColor: 'gray', 
+    marginTop: 5, 
+    paddingBottom: 5 
+  },
+  countryCode: { 
+    fontSize: 14, 
+    fontFamily: 'Poppins-Regular', 
+    color: 'black', 
+    marginRight: 10 
+  },
+  phoneInput: { 
+    flex: 1, 
+    fontSize: 14, 
+    fontFamily: 'Poppins-Regular', 
+    color: 'black' 
+  },
+  buttonContainer: { 
+    marginTop: 30 
+  },
+  button: { 
+    width: '100%', 
+    height: 46, 
+    backgroundColor: '#0097DB', 
+    borderRadius: 10, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  buttonText: { 
+    color: 'white', 
+    fontSize: 18, 
+    fontFamily: 'Gilroy-SemiBold' 
+  },
+  orContainer: { 
+    flexDirection: 'row', 
+    width: '100%', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginTop: 20 
+  },
+  line: { 
+    width: '40%', 
+    height: 1, 
+    backgroundColor: 'black' 
+  },
+  or: { 
+    fontSize: 16, 
+    color: 'black' 
+  },
+  socialButton: { 
+    flexDirection: 'row', 
+    width: '100%', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    height: 46, 
+    backgroundColor: 'white', 
+    marginTop: 20, 
+    elevation: 5, 
+    borderRadius: 10 
+  },
+  icon: { 
+    height: 23, 
+    width: 23 
+  },
+  socialButtonText: { 
+    paddingLeft: 10, 
+    fontSize: 18, 
+    fontFamily: 'Gilroy-SemiBold', 
+    color: 'darkgray' 
+  }
 });
 
-export default LoginScreen;
+export default LoginScreen;

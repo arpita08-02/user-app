@@ -1,5 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { initializeAuth, getAuth, getReactNativePersistence, GoogleAuthProvider } from "firebase/auth";
+import { initializeApp } from '@react-native-firebase/app';
+import auth from '@react-native-firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
@@ -15,22 +15,5 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Auth with persistence
-let auth;
-try {
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage)
-  });
-} catch (error) {
-  if (error.code === 'auth/already-initialized') {
-    // If auth is already initialized, use getAuth
-    auth = getAuth(app);
-  } else {
-    throw error;
-  }
-}
-
-// Initialize Google Auth Provider
-const provider = new GoogleAuthProvider();
-
-export { auth, provider };
+export { auth };
+export default app;

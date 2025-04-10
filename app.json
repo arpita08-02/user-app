@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Avijo:The HealthCare App",
-    "slug": "Avijo:The HealthCare App",
+    "slug": "Avijo2",
     "scheme": "Avijo:The HealthCare App",
     "version": "1.0.0",
     "newArchEnabled": true,
@@ -12,7 +12,6 @@
       "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
-      
     },
     "ios": {
       "supportsTablet": true,

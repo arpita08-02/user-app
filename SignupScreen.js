@@ -8,22 +8,25 @@ import {
   StyleSheet,
   TextInput,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = "https://avijo-571935621051.asia-south2.run.app";
 
 const SignupScreen = ({ route, navigation }) => {
-  const { mobileNumber, otp: initialOtp } = route.params || {};
+  const { mobileNumber, otp: initialOtp } = route.params;
   const [otp, setOtp] = useState(initialOtp ? initialOtp.split('') : ["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
-  const [countdown, setCountdown] = useState(30); // Increased from 10 to 30 seconds
-  const [isAutoVerifying, setIsAutoVerifying] = useState(false);
+  const [countdown, setCountdown] = useState(30);
   
   const otpInputs = Array(6).fill().map(() => useRef(null));
 
   useEffect(() => {
+    if (initialOtp) {
+      setOtp(initialOtp.split(""));
+    }
     otpInputs[0].current?.focus();
-  }, []);
+  }, [initialOtp]);
 
   const verifyOTP = async (otpToVerify) => {
     if (otpToVerify.length !== 6 || isNaN(otpToVerify)) {
@@ -33,11 +36,9 @@ const SignupScreen = ({ route, navigation }) => {
 
     try {
       setLoading(true);
-      setIsAutoVerifying(true);
       
       const response = await fetch(`${BASE_URL}/user/verifyLogin`, {
         method: "POST",
-        credentials: 'include', // Essential for cookies
         headers: { 
           "Content-Type": "application/json",
           "Accept": "application/json"
@@ -51,8 +52,23 @@ const SignupScreen = ({ route, navigation }) => {
       const data = await response.json();
       
       if (response.ok) {
-        // JWT cookie is automatically stored by browser
-        navigation.replace("HomeScreen");
+        // Check if user exists
+        const userCheckResponse = await fetch(`${BASE_URL}/user/check-user/${mobileNumber}`);
+        const userData = await userCheckResponse.json();
+        
+        if (userData.exists) {
+          // Existing user - go to Home
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'HomeScreen' }],
+          });
+        } else {
+          // New user - go to Create Account
+          navigation.replace("CreateAccount", { 
+            mobileNumber,
+            otp: otpToVerify
+          });
+        }
         return true;
       } else {
         Alert.alert("Error", data.message || "OTP verification failed.");
@@ -64,13 +80,7 @@ const SignupScreen = ({ route, navigation }) => {
       return false;
     } finally {
       setLoading(false);
-      setIsAutoVerifying(false);
     }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (isAutoVerifying) return;
-    await verifyOTP(otp.join(""));
   };
 
   const handleResendOTP = async () => {
@@ -78,7 +88,6 @@ const SignupScreen = ({ route, navigation }) => {
       setResendLoading(true);
       const response = await fetch(`${BASE_URL}/user/login`, {
         method: "POST",
-        credentials: 'include', // For cookie consistency
         headers: { 
           "Content-Type": "application/json",
           "Accept": "application/json"
@@ -117,7 +126,7 @@ const SignupScreen = ({ route, navigation }) => {
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Handle paste operation (6 digits at once)
+    // Handle paste operation
     if (value.length === 6) {
       const otpArray = value.split('').slice(0, 6);
       setOtp(otpArray);
@@ -180,7 +189,7 @@ const SignupScreen = ({ route, navigation }) => {
               styles.otpBox,
               digit && styles.otpBoxFilled
             ]}
-            maxLength={index === 0 ? 6 : 1} // Allow paste in first field
+            maxLength={index === 0 ? 6 : 1}
             keyboardType="numeric"
             value={digit}
             onChangeText={(value) => handleOtpChange(index, value)}
@@ -213,7 +222,7 @@ const SignupScreen = ({ route, navigation }) => {
         ) : (
           <TouchableOpacity 
             style={styles.button} 
-            onPress={handleVerifyOTP}
+            onPress={() => verifyOTP(otp.join(""))}
             disabled={otp.join("").length !== 6}
           >
             <Text style={styles.buttonText}>Verify</Text>
@@ -349,9 +358,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  buttonDisabled: {
-    backgroundColor: "#B0E0F0",
-  },
   buttonText: {
     color: "white",
     fontSize: 18,
@@ -359,4 +365,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SignupScreen;
+export default SignupScreen;

@@ -42,41 +42,6 @@ export default function HomeScreen({ navigation, route }) {
   const serviceAreaCenter = { latitude: 23.2599, longitude: 77.4126 };
   const serviceRadius = 20;
 
-  // useEffect(() => {
-  //   const loadUserData = async () => {
-  //     try {
-  //       // First try to get from AsyncStorage
-  //       const cachedName = await AsyncStorage.getItem('userFullName');
-  //       const cachedNumber = await AsyncStorage.getItem('userMobileNumber');
-        
-  //       if (cachedName) setUserFullName(cachedName);
-  //       if (cachedNumber) setUserPhoneNumber(cachedNumber);
-
-  //       // Then try to fetch fresh data from API
-  //       const response = await fetch(${BASE_URL}/user/get-user, {
-  //         method: "GET",
-  //         credentials: "include",
-  //         headers: { 
-  //           "Content-Type": "application/json",
-  //           "Accept": "application/json"
-  //         },
-  //       });
-
-  //       if (response.ok) {
-  //         const data = await response.json();
-  //         setUserFullName(data.fullName || "");
-  //         setUserPhoneNumber(data.mobileNumber || "");
-          
-  //         // Update AsyncStorage with fresh data
-  //         await AsyncStorage.setItem('userFullName', data.fullName || "");
-  //         await AsyncStorage.setItem('userMobileNumber', data.mobileNumber || "");
-  //       }
-  //     } catch (error) {
-  //       console.error('Error loading user data:', error);
-  //     }
-  //   };
-    
-  //   loadUserData();
   useEffect(() => {
     const loadUserData = async () => {
       try {
@@ -120,7 +85,6 @@ export default function HomeScreen({ navigation, route }) {
     
     loadUserData();
 
-
     if (!route.params?.selectedLocation) {
       (async () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
@@ -140,6 +104,12 @@ export default function HomeScreen({ navigation, route }) {
       checkServiceAvailability(route.params.selectedLocation);
     }
   }, [route.params?.selectedLocation]);
+
+  useEffect(() => {
+    if (route.params?.showDrawer) {
+      setDrawerVisible(true);
+    }
+  }, [route.params?.showDrawer]);
 
   const checkServiceAvailability = async (coords) => {
     const { latitude, longitude } = coords;
@@ -180,6 +150,14 @@ export default function HomeScreen({ navigation, route }) {
       console.error("Logout error:", error);
       Alert.alert("Error", "Failed to logout. Please try again.");
     }
+  };
+
+  const handleComingSoon = () => {
+    Alert.alert(
+      "Coming Soon",
+      "This feature is currently under development and will be available in future updates.",
+      [{ text: "OK" }]
+    );
   };
 
   return (
@@ -232,17 +210,6 @@ export default function HomeScreen({ navigation, route }) {
             <Ionicons name="close" size={30} color="#000" />
           </TouchableOpacity>
 
-          {/* <TouchableOpacity onPress={pickImage}>
-            <Image
-              source={profileImage ? { uri: profileImage } : require("./assets/Profile.png")}
-              style={styles.profilePic}
-            />
-          </TouchableOpacity>
-          
-          {userFullName ? (
-            <Text style={styles.Avijo}>{userFullName}</Text>
-          ) : null}
-          <Text style={styles.phoneText}>{userPhoneNumber}</Text> */}
           <View style={styles.userInfoContainer}>
             <TouchableOpacity onPress={pickImage}>
               <Image
@@ -264,27 +231,49 @@ export default function HomeScreen({ navigation, route }) {
             )}
           </View>
 
-          <TouchableOpacity style={styles.drawerItem}>
+          <TouchableOpacity style={styles.drawerItem} onPress={handleComingSoon}>
             <Image source={require("./assets/abha.png")} style={styles.drawerIcon} />
             <Text style={styles.drawerItemText}>Abha</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.drawerItem}>
+          <TouchableOpacity 
+            style={styles.drawerItem} 
+            onPress={() => {
+              setDrawerVisible(false);
+              navigation.navigate("OrdersScreen", { drawerVisible: true });
+            }}
+          >
             <Image source={require("./assets/order.png")} style={styles.drawerIcon} />
             <Text style={styles.drawerItemText}>Order & Booking</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.drawerItem}>
+          <TouchableOpacity 
+            style={styles.drawerItem} 
+            onPress={() => {
+              setDrawerVisible(false);
+              navigation.navigate('AddressFormScreen', {
+                onSave: (address) => {
+                  navigation.navigate('AddressListScreen', { newAddress: address });
+                }
+              });
+            }}
+          >
             <Image source={require("./assets/address.png")} style={styles.drawerIcon} />
             <Text style={styles.drawerItemText}>Addresses</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.drawerItem}>
+          <TouchableOpacity style={styles.drawerItem} onPress={handleComingSoon}>
             <Image source={require("./assets/reminder.png")} style={styles.drawerIcon} />
             <Text style={styles.drawerItemText}>Reminder</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.drawerItem}>
+          <TouchableOpacity style={styles.drawerItem} onPress={handleComingSoon}>
             <Image source={require("./assets/ambulance1.png")} style={styles.drawerIcon} />
             <Text style={styles.drawerItemText}>Ambulance</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.drawerItem}>
+          <TouchableOpacity 
+            style={styles.drawerItem} 
+            onPress={() => {
+              setDrawerVisible(false);
+              navigation.navigate("SupportScreen", { drawerVisible: true });
+            }}
+          >
             <Image source={require("./assets/help.png")} style={styles.drawerIcon} />
             <Text style={styles.drawerItemText}>Help & Support</Text>
           </TouchableOpacity>

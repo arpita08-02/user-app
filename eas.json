@@ -22,16 +22,11 @@
     "production": {
       "android": {
         "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease"
+        "gradleCommand": ":app:bundleRelease",
+        "credentialsSource": "local",  
+        "workflow": "generic"
       },
       "channel": "production"
-    },
-    "apk": {
-      "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease"
-      },
-      "channel": "apk"
     }
   },
   "submit": {
