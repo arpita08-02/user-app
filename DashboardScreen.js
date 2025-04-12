@@ -4,14 +4,26 @@ import { Ionicons } from '@expo/vector-icons';
 
 const DashboardScreen = ({ navigation }) => {
   const menuItems = [
-    { id: 1, title: 'Abha', icon: 'document-text-outline' },
-    { id: 2, title: 'Order & Booking', icon: 'cart-outline' },
-    { id: 3, title: 'Addresses', icon: 'location-outline', screen: 'AddressList' },
-    { id: 4, title: 'Reminder', icon: 'alarm-outline' },
-    { id: 5, title: 'Ambulance', icon: 'car-outline' },
-    { id: 6, title: 'Help & Support', icon: 'help-circle-outline' },
-    { id: 7, title: 'Logout', icon: 'log-out-outline' }
+    { id: 1, title: 'Abha', icon: 'document-text-outline', screen: null },
+    { id: 2, title: 'Order & Booking', icon: 'cart-outline', screen: 'OrdersScreen' },
+    { id: 3, title: 'Addresses', icon: 'location-outline', screen: 'AddressListScreen' },
+    { id: 4, title: 'Reminder', icon: 'alarm-outline', screen: null },
+    { id: 5, title: 'Ambulance', icon: 'car-outline', screen: null },
+    { id: 6, title: 'Help & Support', icon: 'help-circle-outline', screen: 'SupportScreen' },
+    { id: 7, title: 'Logout', icon: 'log-out-outline', screen: null }
   ];
+
+  const handleMenuPress = (item) => {
+    if (item.screen) {
+      navigation.navigate(item.screen);
+    } else if (item.title === 'Logout') {
+      // Handle logout
+      navigation.navigate('LoginScreen');
+    } else {
+      // For features that are not yet implemented
+      alert('This feature is coming soon!');
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -32,7 +44,7 @@ const DashboardScreen = ({ navigation }) => {
           <TouchableOpacity
             key={item.id}
             style={styles.menuItem}
-            onPress={() => item.screen ? navigation.navigate(item.screen) : null}
+            onPress={() => handleMenuPress(item)}
           >
             <Ionicons name={item.icon} size={24} color="#333" style={styles.menuIcon} />
             <Text style={styles.menuText}>{item.title}</Text>
@@ -47,17 +59,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    paddingTop: 20,
   },
   closeButton: {
-    position: 'absolute',
-    right: 15,
-    top: 15,
-    zIndex: 1,
+    padding: 15,
+    alignSelf: 'flex-end',
   },
   profileSection: {
     alignItems: 'center',
-    padding: 20,
-    marginTop: 40,
+    marginBottom: 30,
   },
   avatarContainer: {
     width: 80,
@@ -71,25 +81,25 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#333',
     marginBottom: 5,
   },
   phone: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#666',
   },
   menuContainer: {
-    marginTop: 20,
+    paddingHorizontal: 20,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
   menuIcon: {
     marginRight: 15,
-    width: 24,
   },
   menuText: {
     fontSize: 16,

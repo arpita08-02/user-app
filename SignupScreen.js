@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// Updated BASE_URL to use https
 const BASE_URL = "https://avijo-571935621051.asia-south2.run.app";
 
 const SignupScreen = ({ route, navigation }) => {
@@ -23,60 +24,110 @@ const SignupScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (initialOtp) {
+      console.log("\n=== Initial OTP Information ===");
+      console.log("🔐 Initial OTP received:", initialOtp);
+      console.log("📱 Phone Number:", mobileNumber);
+      console.log("⏰ Time:", new Date().toLocaleTimeString());
       setOtp(initialOtp.split(""));
     }
     otpInputs[0].current?.focus();
   }, [initialOtp]);
 
+  const makeApiRequest = async (url, method, body) => {
+    try {
+      console.log(`Making ${method} request to:`, url);
+      console.log('Request body:', body);
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      const textResponse = await response.text();
+      console.log('Raw response:', textResponse);
+
+      let data;
+      try {
+        data = JSON.parse(textResponse);
+        // Log OTP if it exists in the response
+        if (data.otp) {
+          console.log('🔐 OTP received:', data.otp);
+          console.log('📱 Phone Number:', body.mobileNumber);
+          console.log('⏰ Time:', new Date().toLocaleTimeString());
+        }
+      } catch (error) {
+        console.error('Failed to parse response:', error);
+        throw new Error('Server returned invalid data');
+      }
+
+      return { response, data };
+    } catch (error) {
+      console.error('API request failed:', error);
+      if (error.message.includes('Network request failed')) {
+        throw new Error('Unable to connect to server. Please check your internet connection.');
+      }
+      throw error;
+    }
+  };
+
   const verifyOTP = async (otpToVerify) => {
+    console.log("=== OTP Verification Process ===");
+    console.log("📱 Phone Number:", mobileNumber);
+    console.log("🔑 OTP Entered:", otpToVerify);
+    console.log("🔑 Expected OTP:", route.params.otp);
+    
     if (otpToVerify.length !== 6 || isNaN(otpToVerify)) {
+      console.log("❌ Invalid OTP format:", otpToVerify);
       Alert.alert("Invalid OTP", "Please enter a valid 6-digit OTP.");
       return false;
     }
 
     try {
       setLoading(true);
+      console.log("🔄 Verifying OTP...");
       
-      const response = await fetch(`${BASE_URL}/user/verifyLogin`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({ 
-          mobileNumber, 
-          otp: otpToVerify 
-        }),
-      });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        // Check if user exists
-        const userCheckResponse = await fetch(`${BASE_URL}/user/check-user/${mobileNumber}`);
-        const userData = await userCheckResponse.json();
+      // For demo, compare with the OTP passed in route params
+      if (otpToVerify === route.params.otp) {
+        console.log("✅ OTP Verification successful!");
         
-        if (userData.exists) {
-          // Existing user - go to Home
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'HomeScreen' }],
-          });
-        } else {
-          // New user - go to Create Account
-          navigation.replace("CreateAccount", { 
+        // Store demo user data
+        const demoUserData = {
+          fullName: "Demo User",
+          email: "demo@example.com",
+          mobileNumber: mobileNumber
+        };
+        
+        await AsyncStorage.setItem('userData', JSON.stringify(demoUserData));
+        console.log("💾 Demo user data stored in AsyncStorage");
+
+        const isNewUser = route.params?.isNewUser;
+        console.log("👤 User status:", isNewUser ? "New User" : "Existing User");
+
+        if (isNewUser) {
+          console.log("🔄 Navigation: SignupScreen -> CreateAccountScreen");
+          navigation.replace("CreateAccountScreen", { 
             mobileNumber,
             otp: otpToVerify
+          });
+        } else {
+          console.log("🔄 Navigation: SignupScreen -> HomeScreen");
+          navigation.replace("HomeScreen", {
+            userData: demoUserData
           });
         }
         return true;
       } else {
-        Alert.alert("Error", data.message || "OTP verification failed.");
+        console.log("❌ OTP verification failed - OTP mismatch");
+        Alert.alert("Invalid OTP", "Please enter the correct OTP");
         return false;
       }
     } catch (error) {
-      console.error("Verification error:", error);
-      Alert.alert("Error", "OTP verification failed. Please try again.");
+      console.error("❌ Verification error:", error.message);
+      Alert.alert("Error", error.message || "OTP verification failed. Please try again.");
       return false;
     } finally {
       setLoading(false);
@@ -86,27 +137,24 @@ const SignupScreen = ({ route, navigation }) => {
   const handleResendOTP = async () => {
     try {
       setResendLoading(true);
-      const response = await fetch(`${BASE_URL}/user/login`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({ mobileNumber }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert("Success", "OTP has been resent successfully");
-        setCountdown(30);
-        setOtp(["", "", "", "", "", ""]);
-        otpInputs[0].current?.focus();
-      } else {
-        Alert.alert("Error", data.message || "Failed to resend OTP");
-      }
+      console.log("\n=== Resend OTP Process ===");
+      console.log("📱 Phone Number:", mobileNumber);
+      
+      // Generate new demo OTP
+      const newOTP = String(Math.floor(100000 + Math.random() * 900000));
+      console.log("🔐 New Demo OTP:", newOTP);
+      
+      Alert.alert("Success", "OTP has been resent successfully");
+      setCountdown(30);
+      setOtp(["", "", "", "", "", ""]);
+      otpInputs[0].current?.focus();
+      
+      // Update route params with new OTP
+      route.params.otp = newOTP;
+      
     } catch (error) {
-      console.error("Resend error:", error);
-      Alert.alert("Error", "Failed to resend OTP. Please try again.");
+      console.error("❌ Resend error:", error);
+      Alert.alert("Error", error.message || "Failed to resend OTP. Please try again.");
     } finally {
       setResendLoading(false);
     }
@@ -125,10 +173,12 @@ const SignupScreen = ({ route, navigation }) => {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+    console.log("OTP changed:", newOtp.join(""));
 
     // Handle paste operation
     if (value.length === 6) {
       const otpArray = value.split('').slice(0, 6);
+      console.log("Pasted OTP:", otpArray.join(""));
       setOtp(otpArray);
       otpInputs[5].current?.focus();
       verifyOTP(otpArray.join(""));
@@ -142,7 +192,9 @@ const SignupScreen = ({ route, navigation }) => {
 
     // Auto-verify when last digit is entered
     if (index === 5 && value) {
-      verifyOTP([...newOtp.slice(0, 5), value].join(""));
+      const fullOtp = [...newOtp.slice(0, 5), value].join("");
+      console.log("Auto-verifying OTP:", fullOtp);
+      verifyOTP(fullOtp);
     }
   };
 
@@ -200,21 +252,23 @@ const SignupScreen = ({ route, navigation }) => {
         ))}
       </View>
 
-      {countdown > 0 ? (
-        <Text style={styles.countdownText}>Waiting for OTP... {countdown} Sec</Text>
-      ) : (
-        <TouchableOpacity 
-          onPress={handleResendOTP}
-          disabled={resendLoading}
-          style={styles.resendButton}
-        >
-          {resendLoading ? (
-            <ActivityIndicator color="#0095D9" />
-          ) : (
-            <Text style={styles.resendText}>Resend OTP</Text>
-          )}
-        </TouchableOpacity>
-      )}
+      <View style={styles.resendContainer}>
+        {countdown > 0 ? (
+          <Text style={styles.countdownText}>Waiting for OTP... {countdown} Sec</Text>
+        ) : (
+          <TouchableOpacity 
+            onPress={handleResendOTP}
+            disabled={resendLoading}
+            style={styles.resendButton}
+          >
+            {resendLoading ? (
+              <ActivityIndicator color="#0095D9" />
+            ) : (
+              <Text style={styles.resendText}>Resend OTP</Text>
+            )}
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={styles.buttonContainer}>
         {loading ? (
@@ -238,7 +292,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
     paddingHorizontal: 24,
-    justifyContent: "center",
+    paddingTop: 40,
   },
   heading: {
     color: "#0095D9",
@@ -328,13 +382,14 @@ const styles = StyleSheet.create({
     borderColor: "#0095D9",
     backgroundColor: "#F0F9FF",
   },
+  resendContainer: {
+    marginTop: 15,
+    alignItems: 'center'
+  },
   countdownText: {
     fontSize: 12,
     color: "gray",
     fontFamily: "Lato-Regular",
-    marginTop: 15,
-    textAlign: "center",
-    marginRight: 210
   },
   resendButton: {
     marginTop: 15,
@@ -344,7 +399,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#0095D9",
     fontFamily: "Lato-SemiBold",
-    marginRight: 265
   },
   buttonContainer: {
     marginTop: 30,
@@ -362,7 +416,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontFamily: "Lato-SemiBold",
-  },
+  }
 });
 
 export default SignupScreen;

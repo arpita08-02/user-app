@@ -16,20 +16,17 @@ const CreateAccount = ({ route, navigation }) => {
   const { mobileNumber, otp: initialOtp } = route.params;
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState(initialOtp ? initialOtp.toString().split("") : ["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState(initialOtp ? initialOtp.split("") : ["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [countdown, setCountdown] = useState(30);
+  const [isAutoVerifying, setIsAutoVerifying] = useState(false);
   
   const otpInputs = Array(6).fill().map(() => useRef(null));
 
   useEffect(() => {
-    console.log('Initial OTP received:', initialOtp);
-    if (initialOtp) {
-      setOtp(initialOtp.toString().split(""));
-    }
     otpInputs[0].current?.focus();
-  }, [initialOtp]);
+  }, []);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -37,6 +34,19 @@ const CreateAccount = ({ route, navigation }) => {
       return () => clearInterval(timer);
     }
   }, [countdown]);
+
+  const storeUserData = async (name, number, email) => {
+    try {
+      await AsyncStorage.multiSet([
+        ['userFullName', name],
+        ['userMobileNumber', number],
+        ['userEmail', email || '']
+      ]);
+    } catch (error) {
+      console.error("AsyncStorage Error:", error);
+      throw new Error("Failed to save user data locally");
+    }
+  };
 
   const validateInputs = () => {
     if (!fullName.trim()) {
@@ -52,45 +62,8 @@ const CreateAccount = ({ route, navigation }) => {
     return true;
   };
 
-  const handleResendOTP = async () => {
-    try {
-      setResendLoading(true);
-      console.log('Resending OTP to:', mobileNumber);
-      
-      const response = await fetch(`${BASE_URL}/user/send-otp`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({ 
-          mobileNumber,
-          isNewUser: true 
-        }),
-      });
-
-      const data = await response.json();
-      console.log('Resend OTP Response:', JSON.stringify(data, null, 2));
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to resend OTP");
-      }
-
-      Alert.alert("Success", `OTP has been resent (DEV: ${data.otp})`);
-      console.log('New OTP:', data.otp);
-      setCountdown(30);
-      setOtp(data.otp ? data.otp.toString().split("") : ["", "", "", "", "", ""]);
-      otpInputs[0].current?.focus();
-
-    } catch (error) {
-      console.error("Resend OTP Error:", error);
-      Alert.alert("Error", error.message || "Failed to resend OTP. Please try again.");
-    } finally {
-      setResendLoading(false);
-    }
-  };
-
   const handleRegisterUser = async (otpToVerify) => {
+    if (isAutoVerifying) return;
     if (!validateInputs()) return;
 
     if (otpToVerify.length !== 6) {
@@ -100,7 +73,15 @@ const CreateAccount = ({ route, navigation }) => {
 
     try {
       setLoading(true);
-      console.log('Registering user with:', { mobileNumber, otp: otpToVerify });
+      setIsAutoVerifying(true);
+      
+      // Log user information
+      console.log('\n=== 👤 User Registration Information ===');
+      console.log('📱 Phone Number:', mobileNumber);
+      console.log('📧 Email:', email || 'Not provided');
+      console.log('🔑 OTP:', otpToVerify);
+      console.log('⏰ Time:', new Date().toLocaleTimeString());
+      console.log('===============================\n');
       
       const payload = {
         mobileNumber,
@@ -120,27 +101,64 @@ const CreateAccount = ({ route, navigation }) => {
       });
 
       const data = await response.json();
-      console.log('Registration Response:', JSON.stringify(data, null, 2));
+      console.log("Registration Response:", data);
 
-      if (response.ok) {
-        await AsyncStorage.multiSet([
-          ['userFullName', fullName],
-          ['userMobileNumber', mobileNumber],
-          ['userEmail', email || '']
-        ]);
-        
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'HomeScreen' }],
-        });
-      } else {
+      if (!response.ok) {
         throw new Error(data?.message || "Registration failed");
       }
+
+      if (!data.success) {
+        throw new Error(data.message || "Registration unsuccessful");
+      }
+
+      await storeUserData(fullName, mobileNumber, email);
+      
+      navigation.replace('HomeScreen', { 
+        userData: {
+          fullName,
+          mobileNumber,
+          email,
+          userImage: `https://api.dicebear.com/5.x/initials/svg?seed=${fullName.replace(' ', '_')}`
+        }
+      });
+
     } catch (error) {
-      console.error("Registration Error:", error);
-      Alert.alert("Registration Failed", error.message);
+      console.error("Registration Error:", error.message || error);
+      Alert.alert(
+        "Registration Failed",
+        error.message || "Could not create account. Please try again."
+      );
     } finally {
       setLoading(false);
+      setIsAutoVerifying(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    try {
+      setResendLoading(true);
+      const response = await fetch(`${BASE_URL}/user/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mobileNumber }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData?.message || "Failed to resend OTP");
+      }
+
+      const data = await response.json();
+      Alert.alert("Success", data.message || "OTP has been resent successfully");
+      setCountdown(30);
+      setOtp(["", "", "", "", "", ""]);
+      otpInputs[0].current?.focus();
+
+    } catch (error) {
+      console.error("Resend OTP Error:", error);
+      Alert.alert("Error", error.message || "Failed to resend OTP. Please try again.");
+    } finally {
+      setResendLoading(false);
     }
   };
 
