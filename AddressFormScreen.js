@@ -15,7 +15,7 @@ const AddressFormScreen = ({ navigation }) => {
   const [addressType, setAddressType] = useState('');
   const [buildingInfo, setBuildingInfo] = useState('');
   const [floor, setFloor] = useState('');
-  const [locality, setLocality] = useState('Mahalaxmi Nagar , Indore');
+  const [locality, setLocality] = useState('');
   const [landmark, setLandmark] = useState('');
   const [name, setName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');

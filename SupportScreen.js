@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, StatusBar, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from './components/GlobalTheme';
@@ -6,15 +6,40 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 const SupportScreen = () => {
   const navigation = useNavigation();
+  const [messages, setMessages] = useState([
+    { id: 1, text: 'Hello, how can I help you today?', sender: 'agent', time: '9:41 AM' }
+  ]);
+  const [inputText, setInputText] = useState('');
+  const [isFirstMessage, setIsFirstMessage] = useState(true);
 
-  // Dummy chat messages
-  const messages = [
-    { id: 1, text: 'Hello, how can I help you today?', sender: 'agent', time: '9:41 AM' },
-    { id: 2, text: 'I have a question about my recent order', sender: 'user', time: '9:42 AM' },
-    { id: 3, text: 'Could you please provide your order number?', sender: 'agent', time: '9:43 AM' },
-    { id: 4, text: 'My order number is #12345', sender: 'user', time: '9:44 AM' },
-    { id: 5, text: 'Thank you! I can see your order. What specific information do you need?', sender: 'agent', time: '9:45 AM' },
-  ];
+  const handleSendMessage = () => {
+    if (inputText.trim() === '') return;
+    
+    // Add user message
+    const newUserMessage = {
+      id: messages.length + 1,
+      text: inputText,
+      sender: 'user',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    
+    setMessages([...messages, newUserMessage]);
+    setInputText('');
+    
+    // If it's the first message, add the bot response
+    if (isFirstMessage) {
+      setTimeout(() => {
+        const botResponse = {
+          id: messages.length + 2,
+          text: 'As location is not serviceable right now product query is not accessible and for other related query contact on avijo.in/contact',
+          sender: 'agent',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages(prevMessages => [...prevMessages, botResponse]);
+        setIsFirstMessage(false);
+      }, 500);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -44,8 +69,14 @@ const SupportScreen = () => {
               message.sender === 'user' ? styles.userMessage : styles.agentMessage
             ]}
           >
-            <Text style={styles.messageText}>{message.text}</Text>
-            <Text style={styles.messageTime}>{message.time}</Text>
+            <Text style={[
+              styles.messageText,
+              message.sender === 'user' ? styles.userMessageText : null
+            ]}>{message.text}</Text>
+            <Text style={[
+              styles.messageTime,
+              message.sender === 'user' ? styles.userMessageTime : null
+            ]}>{message.time}</Text>
           </View>
         ))}
       </ScrollView>
@@ -56,8 +87,10 @@ const SupportScreen = () => {
           style={styles.input}
           placeholder="Write your message..."
           placeholderTextColor="#999"
+          value={inputText}
+          onChangeText={setInputText}
         />
-        <TouchableOpacity style={styles.sendButton}>
+        <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
           <Icon name="send" size={24} color={colors.blue} />
         </TouchableOpacity>
       </View>
@@ -159,4 +192,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SupportScreen;
+export default SupportScreen;

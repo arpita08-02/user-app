@@ -48,11 +48,7 @@ const OrdersScreen = ({ navigation }) => {
   };
 
   const handleButtonPress = (message) => {
-    Alert.alert(
-      'Under Development',
-      message,
-      [{ text: 'OK', style: 'default' }]
-    );
+    navigation.navigate('HomeScreen');
   };
 
   const renderEmptyState = () => {

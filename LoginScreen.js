@@ -1,18 +1,27 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Image, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+import { auth } from './FirebaseConfig';
 
 const BASE_URL = 'https://avijo-571935621051.asia-south2.run.app';
 
-const LoginScreen = ({ navigation }) => {
+WebBrowser.maybeCompleteAuthSession();
+
+const LoginScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigation = useNavigation();
 
+  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+    expoClientId: '571935621051-lcg7u9n4e4j3irimi5tmc8afpjph7all.apps.googleusercontent.com',
+    androidClientId: '571935621051-jqco95bikj99p7fjaak47qd5u7fek136.apps.googleusercontent.com',
+  });
+
+ 
   const handleSendOTP = async () => {
-    // Use demo number regardless of input
-    const demoNumber = '1234567890';
-    const demoOTP = String(Math.floor(100000 + Math.random() * 900000)); // Generate random 6-digit OTP
-    
     if (phoneNumber.length !== 10) {
       Alert.alert('Invalid Number', 'Please enter a valid 10-digit phone number.');
       return;
@@ -20,41 +29,89 @@ const LoginScreen = ({ navigation }) => {
 
     try {
       setLoading(true);
-      console.log('\n=== 🔐 OTP Request Information ===');
-      console.log('📱 Phone Number:', demoNumber);
-      console.log('🔑 Demo OTP:', demoOTP);
-      console.log('⏰ Time:', new Date().toLocaleTimeString());
-      console.log('===============================\n');
-      
-      // Skip actual API call in demo mode
-      console.log('🚀 Skipping actual API call in demo mode');
-      
-      await AsyncStorage.setItem('phoneNumber', demoNumber);
-
-      // Simulate successful response
-      console.log('\n=== 🔐 OTP Information ===');
-      console.log('📱 Phone Number:', demoNumber);
-      console.log('🔑 OTP:', demoOTP);
-      console.log('⏰ Time:', new Date().toLocaleTimeString());
-      console.log('===============================\n');
-      
-      navigation.navigate('SignupScreen', { 
-        mobileNumber: demoNumber,
-        isNewUser: false,
-        otp: demoOTP
+      const response = await fetch(`${BASE_URL}/user/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobileNumber: phoneNumber }),
       });
 
+      const data = await response.json();
+      console.log('API Response:', data);
+
+      await AsyncStorage.setItem('phoneNumber', phoneNumber);
+
+      if (response.ok) {
+        // Existing user - navigate to SignupScreen with OTP
+        navigation.navigate('SignupScreen', { 
+          mobileNumber: phoneNumber,
+          otp: data.otp
+        });
+      } else if (data.message === "User not found. Please register.") {
+        // New user - send OTP for account creation
+        const otpResponse = await fetch(`${BASE_URL}/user/send-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mobileNumber: phoneNumber, isNewUser: true }),
+        });
+        
+        const otpData = await otpResponse.json();
+        
+        if (otpResponse.ok) {
+          // Navigate to CreateAccountScreen with number and OTP
+          navigation.navigate('CreateAccountScreen', { 
+            mobileNumber: phoneNumber,
+            otp: otpData.otp
+          });
+        } else {
+          Alert.alert('Error', otpData.message || 'Failed to send OTP for new user');
+        }
+      } else {
+        Alert.alert('Error', data.message || 'Failed to send OTP');
+      }
     } catch (error) {
       console.error('Error:', error);
-      Alert.alert('Error', error.message || 'An error occurred. Please try again.');
+      Alert.alert('Error', 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Just UI element, no functionality needed
-    Alert.alert('Info', 'Google Sign-in is not implemented in this version.');
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await googlePromptAsync();
+      if (result.type !== 'success') throw new Error('Google login cancelled');
+      
+      const { idToken } = result.params;
+      const credential = auth.GoogleAuthProvider.credential(idToken);
+      const userCredential = await auth().signInWithCredential(credential);
+      
+      // Send Google token to backend to get JWT cookie
+      const response = await fetch(`${BASE_URL}/auth/google`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ token: idToken }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        await AsyncStorage.setItem('userInfo', JSON.stringify({
+          displayName: userCredential.user.displayName,
+          email: userCredential.user.email,
+          photoURL: userCredential.user.photoURL
+        }));
+        navigation.navigate('HomeScreen');
+      } else {
+        throw new Error(data.message || 'Google authentication failed');
+      }
+    } catch (error) {
+      console.error('Google Login Error:', error);
+      Alert.alert('Error', error.message || 'Google login failed');
+    }
   };
 
   return (

@@ -246,24 +246,19 @@ export default function HomeScreen({ navigation, route }) {
             <Text style={styles.drawerItemText}>Order & Booking</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={styles.drawerItem} 
+            style={styles.drawerItem}
             onPress={() => {
               setDrawerVisible(false);
-              navigation.navigate('AddressFormScreen', {
-                onSave: (address) => {
-                  navigation.navigate('AddressListScreen', { newAddress: address });
-                }
-              });
+              navigation.navigate("AddressListScreen", { drawerVisible: true });
             }}
           >
             <Image source={require("./assets/address.png")} style={styles.drawerIcon} />
             <Text style={styles.drawerItemText}>Addresses</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.drawerItem} onPress={handleComingSoon}>
-            <Image source={require("./assets/reminder.png")} style={styles.drawerIcon} />
-            <Text style={styles.drawerItemText}>Reminder</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.drawerItem} onPress={handleComingSoon}>
+          <TouchableOpacity style={styles.drawerItem} onPress={() => {
+            setDrawerVisible(false);
+            navigation.navigate("HomeScreen");
+          }}>
             <Image source={require("./assets/ambulance1.png")} style={styles.drawerIcon} />
             <Text style={styles.drawerItemText}>Ambulance</Text>
           </TouchableOpacity>
@@ -407,6 +402,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 40,
-    marginTop: 20,
-  },
+    marginTop: 20,
+  },
 });

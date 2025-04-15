@@ -27,8 +27,8 @@ android {
         applicationId 'com.randomcompany.mynewapp'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 33 // Updated version code
-        versionName "1.0.33" // Updated version name
+        versionCode 35
+        versionName "35.0.0"
     }
 
     signingConfigs {

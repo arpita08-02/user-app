@@ -1,0 +1,32 @@
+# .easignore
+
+# Node.js and cache
+node_modules/
+npm-debug.log
+yarn-error.log
+.yarn/cache/
+.pnpm-store/
+
+# Android build files
+android/app/build/
+android/.gradle/
+android/local.properties
+
+# iOS build files
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
+
+# Large binaries
+*.apk
+*.aab
+*.zip
+*.tar
+*.mp4
+*.mov
+*.pdf
+
+# Debug/IDE files
+.DS_Store
+.idea/
+.vscode/
